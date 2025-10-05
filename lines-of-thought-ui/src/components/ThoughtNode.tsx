@@ -1,8 +1,9 @@
-import { type GraphNode } from '../types/graph';
+import { type GraphNode, type GraphRelationship } from '../types/graph';
 
 interface ThoughtCardProps {
   node: GraphNode;
   branchCount: number;
+  childRelationships: GraphRelationship[];
   onBranchClick: (index: number) => void;
   onAddBranch: () => void;
   onBack?: () => void;
@@ -13,6 +14,7 @@ interface ThoughtCardProps {
 export default function ThoughtCard({
   node,
   branchCount,
+  childRelationships,
   onBranchClick,
   onAddBranch,
   onBack,
@@ -52,16 +54,30 @@ export default function ThoughtCard({
 
         {branchCount > 0 && (
           <div className="branch-lines">
-            {Array.from({ length: branchCount }).map((_, index) => (
-              <div
-                key={index}
-                className="branch-line"
-                onClick={() => onBranchClick(index)}
-              >
-                <div className="branch-line-path"></div>
-                <div className="branch-line-label">Branch {index + 1}</div>
-              </div>
-            ))}
+            {Array.from({ length: branchCount }).map((_, index) => {
+              const relationship = childRelationships[index];
+              const perspective = relationship?.perspective;
+
+              return (
+                <div
+                  key={index}
+                  className="branch-line"
+                  onClick={() => onBranchClick(index)}
+                >
+                  <div className="branch-line-path"></div>
+                  <div className="branch-line-label">
+                    {perspective ? (
+                      <>
+                        <span className="branch-perspective">{perspective}</span>
+                        <span className="branch-number">→ Branch {index + 1}</span>
+                      </>
+                    ) : (
+                      `Branch ${index + 1}`
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

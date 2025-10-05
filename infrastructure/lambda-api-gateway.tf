@@ -67,6 +67,7 @@ resource "aws_lambda_function" "api" {
       NEO4J_DATABASE = local.NEO4J_DATABASE
       JWT_SECRET_KEY = local.JWT_SECRET_KEY
       S3_BUCKET_NAME = local.general_bucket_name
+      CORS_ORIGIN    = local.CORS_ORIGIN
     }
   }
 

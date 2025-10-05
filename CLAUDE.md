@@ -77,3 +77,8 @@ The project consists of three main components:
 - CloudFront origin path is `/prod` (API Gateway stage name)
 - Health endpoint (`/health`) has separate cache behavior with higher TTL
 - API responses generally not cached (default_ttl = 0)
+
+# FOR TESTING CHANGES
+You do not have to spin up the api or ui locally, the developer will handle spinning those up.
+UI will be spun up at http://localhost:5173
+API will be spun up at http://localhost:3000

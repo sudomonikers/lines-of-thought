@@ -4,7 +4,7 @@ import { getNeo4jDriver } from '../lib/neo4j';
 // Create a relationship between two nodes
 export const createRelationship = async (req: Request, res: Response) => {
   try {
-    const { fromElementId, toElementId, type } = req.body;
+    const { fromElementId, toElementId, type, perspective } = req.body;
 
     if (!fromElementId || !toElementId) {
       return res.status(400).json({ error: 'fromElementId and toElementId are required' });
@@ -17,12 +17,13 @@ export const createRelationship = async (req: Request, res: Response) => {
     const driver = getNeo4jDriver();
     const session = driver.session();
 
+    // Create relationship with optional perspective property
     const result = await session.run(
       `MATCH (from:Thought), (to:Thought)
        WHERE elementId(from) = $fromElementId AND elementId(to) = $toElementId
-       CREATE (from)-[r:BRANCHES_TO]->(to)
+       CREATE (from)-[r:BRANCHES_TO ${perspective ? '{perspective: $perspective}' : ''}]->(to)
        RETURN r, elementId(from) as fromElementId, elementId(to) as toElementId`,
-      { fromElementId, toElementId }
+      { fromElementId, toElementId, perspective: perspective || null }
     );
 
     await session.close();
@@ -39,6 +40,7 @@ export const createRelationship = async (req: Request, res: Response) => {
       fromElementId: record.get('fromElementId'),
       toElementId: record.get('toElementId'),
       type: relationship.type,
+      perspective: relationship.properties.perspective || null,
     });
   } catch (error) {
     res.status(500).json({
@@ -71,6 +73,7 @@ export const getNodeRelationships = async (req: Request, res: Response) => {
         fromElementId: record.get('fromElementId'),
         toElementId: record.get('toElementId'),
         type: relationship.type,
+        perspective: relationship.properties.perspective || null,
       };
     });
 

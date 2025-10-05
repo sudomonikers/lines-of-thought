@@ -12,6 +12,7 @@ interface ThoughtRelationship {
   fromElementId: string;
   toElementId: string;
   type: string;
+  perspective?: string | null;
 }
 
 // Get a node with its immediate children (one level deep)
@@ -88,6 +89,7 @@ export const getNodeWithChildren = async (req: Request, res: Response) => {
           fromElementId: r.from,
           toElementId: r.to,
           type: r.rel.type,
+          perspective: r.rel.properties?.perspective || null,
         })),
       ...parentRelationshipData
         .filter((r: any) => r.rel && r.rel.elementId)
@@ -96,6 +98,7 @@ export const getNodeWithChildren = async (req: Request, res: Response) => {
           fromElementId: r.from,
           toElementId: r.to,
           type: r.rel.type,
+          perspective: r.rel.properties?.perspective || null,
         }))
     ];
 
@@ -153,6 +156,7 @@ export const getFullGraph = async (req: Request, res: Response) => {
         fromElementId: r.from,
         toElementId: r.to,
         type: r.rel.type,
+        perspective: r.rel.properties?.perspective || null,
       }));
 
     res.json({ nodes, relationships });

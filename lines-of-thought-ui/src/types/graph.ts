@@ -11,6 +11,7 @@ export interface GraphRelationship {
   fromElementId: string;
   toElementId: string;
   type: 'BRANCHES_TO';
+  perspective?: string | null;
 }
 
 export interface GraphData {
@@ -90,4 +91,9 @@ export function getParentNode(elementId: string, graph: GraphData): GraphNode | 
   if (!parentRel) return null;
 
   return graph.nodes.get(parentRel.fromElementId) || null;
+}
+
+// Helper to get child relationships for a given node elementId
+export function getChildRelationships(elementId: string, graph: GraphData): GraphRelationship[] {
+  return graph.relationships.filter(rel => rel.fromElementId === elementId);
 }

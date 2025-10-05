@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { type GraphNode } from '../types/graph';
 
 interface SearchBarProps {
@@ -12,13 +12,13 @@ export default function SearchBar({ onSelectNode, onNewThought, onHelp }: Search
   const [results, setResults] = useState<GraphNode[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const debounceTimerRef = useRef<number | null>(null);
 
-  const handleSearch = async (searchQuery: string) => {
-    setQuery(searchQuery);
-
+  const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
       setShowResults(false);
+      setIsSearching(false);
       return;
     }
 
@@ -35,6 +35,40 @@ export default function SearchBar({ onSelectNode, onNewThought, onHelp }: Search
     }
   };
 
+  const handleSearch = (searchQuery: string) => {
+    setQuery(searchQuery);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // If query is empty, clear results immediately
+    if (!searchQuery.trim()) {
+      setResults([]);
+      setShowResults(false);
+      setIsSearching(false);
+      return;
+    }
+
+    // Show loading state immediately
+    setIsSearching(true);
+
+    // Set new timer for debounced search (500ms delay)
+    debounceTimerRef.current = window.setTimeout(() => {
+      performSearch(searchQuery);
+    }, 500);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleSelectNode = (node: GraphNode) => {
     onSelectNode(node);
     setQuery('');
@@ -49,20 +83,22 @@ export default function SearchBar({ onSelectNode, onNewThought, onHelp }: Search
 
   return (
     <div className="search-bar">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => handleSearch(e.target.value)}
-        onFocus={() => query && setShowResults(true)}
-        onBlur={handleBlur}
-        placeholder="Search thoughts..."
-        className="search-input"
-      />
+      <div className="search-input-row">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => handleSearch(e.target.value)}
+          onFocus={() => query && setShowResults(true)}
+          onBlur={handleBlur}
+          placeholder="Search thoughts..."
+          className="search-input"
+        />
+        <button onClick={onHelp} className="help-button">
+          ?
+        </button>
+      </div>
       <button onClick={onNewThought} className="new-thought-button">
         + New Thought
-      </button>
-      <button onClick={onHelp} className="help-button">
-        ?
       </button>
 
       {isSearching && <div className="search-loading">Searching...</div>}

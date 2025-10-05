@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@xenova/transformers": "^1.2.2",
+    "@xenova/transformers": "^1.4.3",
     "express": "^5.1.0",
     "neo4j-driver": "^6.0.0",
     "serverless-http": "^4.0.0"
