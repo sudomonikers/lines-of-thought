@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "crud-operations",
+  "main": "index.js",
+  "scripts": {
+    "dev": "source .env && tsx watch index.ts",
+    "build": "tsc",
+    "deploy": "./deploy.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@xenova/transformers": "^1.2.2",
+    "express": "^5.1.0",
+    "neo4j-driver": "^6.0.0",
+    "serverless-http": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.6.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
