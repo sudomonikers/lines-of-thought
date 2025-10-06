@@ -353,7 +353,6 @@
   justify-content: space-between;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
   max-height: calc(100vh - 200px);
-  overflow-y: scroll;
 }
 
 .thought-card-content {
@@ -361,7 +360,7 @@
   line-height: 1.8;
   text-align: center;
   margin-bottom: 2rem;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .add-branch-btn {

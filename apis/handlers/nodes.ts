@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { getNeo4jDriver } from '../lib/neo4j';
 import { generateEmbedding } from '../lib/embeddings';
-import { handleError, handleNotFound } from '../lib/error-handler';
+import { handleError } from '../lib/error-handler';
 import { moderateContent, analyzeArgumentStrength } from '../lib/moderation';
 
 // Create a new thought node
@@ -28,6 +28,9 @@ export const createNode = async (req: Request, res: Response) => {
     const session = driver.session();
 
     try {
+      // Variable to store parent text if fetched
+      let parentText: string | null = null;
+
       // Check for originality BEFORE moderation to avoid unnecessary Bedrock calls
       if (!parentId) {
         // Check for duplicate parent nodes
@@ -52,6 +55,37 @@ export const createNode = async (req: Request, res: Response) => {
           });
         }
       } else {
+        // Fetch parent node and check similarity in one query
+        const parentResult = await session.run(
+          `MATCH (parent:Thought)
+           WHERE elementId(parent) = $parentId
+           RETURN parent.text as parentText,
+                  parent.embedding as parentEmbedding,
+                  CASE
+                    WHEN parent.embedding IS NOT NULL
+                    THEN gds.similarity.cosine(parent.embedding, $embedding)
+                    ELSE null
+                  END as similarity`,
+          { parentId, embedding }
+        );
+
+        if (parentResult.records.length === 0) {
+          return res.status(404).json({ error: 'Parent node not found' });
+        }
+
+        const parentRecord = parentResult.records[0];
+        parentText = parentRecord.get('parentText');
+        const similarity = parentRecord.get('similarity');
+
+        if (similarity !== null && similarity > 0.9) {
+          return res.status(400).json({
+            error: 'Thought too similar to parent',
+            errorCode: 'SIMILAR_TO_PARENT',
+            message: `This thought is too similar to its parent (${(similarity * 100).toFixed(1)}% similarity). Please develop the idea further or explore a different angle.`,
+            similarity: similarity,
+          });
+        }
+
         // Check for duplicate child thoughts under the same parent
         const siblingsSimilarityResult = await session.run(
           `MATCH (parent:Thought)-[:BRANCHES_TO]->(sibling:Thought)
@@ -94,19 +128,10 @@ export const createNode = async (req: Request, res: Response) => {
       let strengthAnalysis: string | null = null;
 
       if (parentId) {
-        // First, fetch the parent node to get its text for strength analysis
-        const parentResult = await session.run(
-          `MATCH (parent:Thought)
-           WHERE elementId(parent) = $parentId
-           RETURN parent.text as parentText`,
-          { parentId }
-        );
-
-        if (parentResult.records.length === 0) {
+        // Parent text was already fetched during similarity check
+        if (!parentText) {
           return res.status(404).json({ error: 'Parent node not found' });
         }
-
-        const parentText = parentResult.records[0].get('parentText');
 
         // Analyze argument strength between parent and child
         const strengthResult = await analyzeArgumentStrength(parentText, text);

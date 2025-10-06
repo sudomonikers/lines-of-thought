@@ -2,6 +2,9 @@
 
 set -e
 
+# Disable AWS CLI pager
+export AWS_PAGER=""
+
 # Configuration
 AWS_REGION="us-east-1"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
