@@ -669,8 +669,12 @@
   font-size: 1rem;
   line-height: 1.6;
   text-align: center;
-  overflow-y: auto;
-  max-height: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
   width: 100%;
 }
 

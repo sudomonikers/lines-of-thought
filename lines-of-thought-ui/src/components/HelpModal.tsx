@@ -37,16 +37,6 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <li><strong>Search</strong> - Find any thought you've created using the search bar</li>
             </ul>
           </section>
-
-          <section>
-            <h3>Tips</h3>
-            <ul>
-              <li>Create standalone thoughts with "+ New Thought" to start fresh lines of reasoning</li>
-              <li>Branch off from existing thoughts to explore different perspectives or implications</li>
-              <li>Navigate backward through preceding thoughts to see the chain of reasoning</li>
-              <li>Use search to jump to any thought in your network</li>
-            </ul>
-          </section>
         </div>
 
         <div className="modal-footer">

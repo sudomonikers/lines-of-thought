@@ -51,10 +51,42 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore }: Thoug
   const parentNode = currentNode ? getParentNode(currentNodeId, graph) : null;
 
 
-  const navigateToBranch = (branchIndex: number) => {
+  const navigateToBranch = async (branchIndex: number) => {
     const targetNode = childNodes[branchIndex];
     if (targetNode) {
       setSlideDirection('right');
+
+      // Check if this node's children are already loaded
+      const targetChildren = getChildNodes(targetNode.elementId, graph);
+
+      // If no children are in the graph, fetch them from the API
+      if (targetChildren.length === 0) {
+        try {
+          const graphData = await getNodeWithChildren(targetNode.elementId);
+
+          // Merge the new nodes into the existing graph
+          const updatedNodes = new Map(graph.nodes);
+          graphData.nodes.forEach(node => {
+            if (!updatedNodes.has(node.elementId)) {
+              updatedNodes.set(node.elementId, node);
+            }
+          });
+
+          // Merge the new relationships
+          const existingRelIds = new Set(graph.relationships.map(r => r.elementId));
+          const newRelationships = graphData.relationships.filter(
+            r => !existingRelIds.has(r.elementId)
+          );
+
+          setGraph({
+            nodes: updatedNodes,
+            relationships: [...graph.relationships, ...newRelationships]
+          });
+        } catch (error) {
+          console.error('Failed to load node children:', error);
+        }
+      }
+
       setTimeout(() => {
         setNavigationStack([...navigationStack, targetNode.elementId]);
         setSlideDirection(null);
@@ -62,11 +94,43 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore }: Thoug
     }
   };
 
-  const navigateBack = () => {
-    if (navigationStack.length > 1) {
+  const navigateBack = async () => {
+    if (parentNode) {
       setSlideDirection('left');
+
+      // Check if parent node's children are already loaded
+      const parentChildren = getChildNodes(parentNode.elementId, graph);
+
+      // If no children are in the graph, fetch them from the API
+      if (parentChildren.length === 0) {
+        try {
+          const graphData = await getNodeWithChildren(parentNode.elementId);
+
+          // Merge the new nodes into the existing graph
+          const updatedNodes = new Map(graph.nodes);
+          graphData.nodes.forEach(node => {
+            if (!updatedNodes.has(node.elementId)) {
+              updatedNodes.set(node.elementId, node);
+            }
+          });
+
+          // Merge the new relationships
+          const existingRelIds = new Set(graph.relationships.map(r => r.elementId));
+          const newRelationships = graphData.relationships.filter(
+            r => !existingRelIds.has(r.elementId)
+          );
+
+          setGraph({
+            nodes: updatedNodes,
+            relationships: [...graph.relationships, ...newRelationships]
+          });
+        } catch (error) {
+          console.error('Failed to load parent node children:', error);
+        }
+      }
+
       setTimeout(() => {
-        setNavigationStack(navigationStack.slice(0, -1));
+        setNavigationStack([...navigationStack, parentNode.elementId]);
         setSlideDirection(null);
       }, 50);
     } else if (onBackToExplore) {
@@ -74,9 +138,41 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore }: Thoug
     }
   };
 
-  const navigateToParent = () => {
+  const navigateToParent = async () => {
     if (parentNode) {
       setSlideDirection('left');
+
+      // Check if parent node's children are already loaded
+      const parentChildren = getChildNodes(parentNode.elementId, graph);
+
+      // If no children are in the graph, fetch them from the API
+      if (parentChildren.length === 0) {
+        try {
+          const graphData = await getNodeWithChildren(parentNode.elementId);
+
+          // Merge the new nodes into the existing graph
+          const updatedNodes = new Map(graph.nodes);
+          graphData.nodes.forEach(node => {
+            if (!updatedNodes.has(node.elementId)) {
+              updatedNodes.set(node.elementId, node);
+            }
+          });
+
+          // Merge the new relationships
+          const existingRelIds = new Set(graph.relationships.map(r => r.elementId));
+          const newRelationships = graphData.relationships.filter(
+            r => !existingRelIds.has(r.elementId)
+          );
+
+          setGraph({
+            nodes: updatedNodes,
+            relationships: [...graph.relationships, ...newRelationships]
+          });
+        } catch (error) {
+          console.error('Failed to load parent node children:', error);
+        }
+      }
+
       setTimeout(() => {
         setNavigationStack([...navigationStack, parentNode.elementId]);
         setSlideDirection(null);
@@ -148,7 +244,7 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore }: Thoug
           childRelationships={childRelationships}
           onBranchClick={navigateToBranch}
           onAddBranch={() => setIsModalOpen(true)}
-          onBack={navigationStack.length > 1 || onBackToExplore ? navigateBack : undefined}
+          onBack={parentNode || onBackToExplore ? navigateBack : undefined}
           parentNode={parentNode}
           onParentClick={parentNode ? navigateToParent : undefined}
         />
