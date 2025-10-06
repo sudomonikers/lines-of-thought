@@ -151,12 +151,22 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
       }
     }
 
-    // Set next node and trigger slide animation
-    setNextNodeId(targetNodeId);
-    // Use setTimeout to ensure state update happens before animation
-    setTimeout(() => {
+    // For left navigation, we need to set the direction first (without transition)
+    // then add the next node to trigger the transition
+    if (direction === 'left') {
+      // Set direction first to position the slider at -100%
       setSlideDirection(direction);
-    }, 10);
+      // Wait a frame, then set next node which will add 'transitioning' class
+      setTimeout(() => {
+        setNextNodeId(targetNodeId);
+      }, 10);
+    } else {
+      // For right navigation, set next node then direction
+      setNextNodeId(targetNodeId);
+      setTimeout(() => {
+        setSlideDirection(direction);
+      }, 10);
+    }
   }, [graph, mergeGraphData]);
 
   const navigateToBranch = async (branchIndex: number) => {
