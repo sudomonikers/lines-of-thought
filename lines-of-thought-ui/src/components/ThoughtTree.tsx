@@ -32,8 +32,10 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
       }
 
       try {
-        // Check if we have preloaded data
-        if (preloadedNodes && preloadedNodes.size > 0 && preloadedRelationships) {
+        // Check if we have preloaded data and it contains the target node
+        const hasPreloadedTarget = preloadedNodes && preloadedNodes.has(navigationTarget.elementId);
+
+        if (hasPreloadedTarget && preloadedRelationships) {
           setGraph({
             nodes: new Map(preloadedNodes),
             relationships: [...preloadedRelationships]

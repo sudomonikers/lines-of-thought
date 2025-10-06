@@ -6,9 +6,11 @@ import { logError } from '../utils/errorHandling';
 interface ExploreProps {
   onSelectNode: (node: GraphNode) => void;
   onPreloadedData?: (nodes: Map<string, GraphNode>, relationships: GraphRelationship[]) => void;
+  initialSkip?: number;
+  onSkipChange?: (skip: number) => void;
 }
 
-export default function Explore({ onSelectNode, onPreloadedData }: ExploreProps) {
+export default function Explore({ onSelectNode, onPreloadedData, initialSkip = 0, onSkipChange }: ExploreProps) {
   const [displayedNodes, setDisplayedNodes] = useState<GraphNode[]>([]);
   const [nextNodes, setNextNodes] = useState<GraphNode[]>([]);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
@@ -49,6 +51,11 @@ export default function Explore({ onSelectNode, onPreloadedData }: ExploreProps)
       totalRef.current = response.total;
       setCurrentSkip(skip);
 
+      // Notify parent of skip change
+      if (onSkipChange) {
+        onSkipChange(skip);
+      }
+
       // Preload children for all displayed nodes
       const elementIds = response.nodes.map(node => node.elementId);
       if (elementIds.length > 0) {
@@ -87,7 +94,7 @@ export default function Explore({ onSelectNode, onPreloadedData }: ExploreProps)
   }, [onPreloadedData]);
 
   useEffect(() => {
-    loadNodes(0);
+    loadNodes(initialSkip);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -134,6 +141,11 @@ export default function Explore({ onSelectNode, onPreloadedData }: ExploreProps)
       // Update skip for the preloaded data
       setCurrentSkip(adjustedSkip);
 
+      // Notify parent of skip change
+      if (onSkipChange) {
+        onSkipChange(adjustedSkip);
+      }
+
       // Start the slide animation immediately
       setNextNodes(nextNodesData);
       setTimeout(() => {
@@ -161,6 +173,11 @@ export default function Explore({ onSelectNode, onPreloadedData }: ExploreProps)
         setCurrentSkip(adjustedSkip);
         setTotal(response.total);
         totalRef.current = response.total;
+
+        // Notify parent of skip change
+        if (onSkipChange) {
+          onSkipChange(adjustedSkip);
+        }
 
         // Start the slide animation after data is loaded
         setNextNodes(nextNodesData);

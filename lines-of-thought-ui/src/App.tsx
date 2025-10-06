@@ -16,6 +16,7 @@ function App() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [preloadedNodes, setPreloadedNodes] = useState<Map<string, GraphNode>>(new Map());
   const [preloadedRelationships, setPreloadedRelationships] = useState<GraphRelationship[]>([]);
+  const [exploreSkip, setExploreSkip] = useState(0);
 
   const handleSelectNode = (node: GraphNode) => {
     setViewingNode(node);
@@ -23,6 +24,10 @@ function App() {
 
   const handleBackToExplore = () => {
     setViewingNode(null);
+  };
+
+  const handleExploreSkipChange = (skip: number) => {
+    setExploreSkip(skip);
   };
 
   const handleNewThought = () => {
@@ -99,6 +104,8 @@ function App() {
         <Explore
           onSelectNode={handleSelectNode}
           onPreloadedData={handlePreloadedData}
+          initialSkip={exploreSkip}
+          onSkipChange={handleExploreSkipChange}
         />
       )}
       <CreateThoughtModal
