@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { type GraphNode } from '../types/graph';
+import { searchNodes } from '../shared/graph.service';
+import { logError } from '../utils/errorHandling';
 
 interface SearchBarProps {
   onSelectNode: (node: GraphNode) => void;
@@ -24,12 +26,11 @@ export default function SearchBar({ onSelectNode, onNewThought, onHelp }: Search
 
     setIsSearching(true);
     try {
-      const { searchNodes } = await import('../shared/graph.service');
       const nodes = await searchNodes(searchQuery);
       setResults(nodes);
       setShowResults(true);
     } catch (error) {
-      console.error('Search failed:', error);
+      logError(error, 'Search failed');
     } finally {
       setIsSearching(false);
     }

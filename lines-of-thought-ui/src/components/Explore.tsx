@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { getAllNodes, type ThoughtNode } from '../shared/graph.service';
+import { getAllNodes, getBatchNodesWithChildren } from '../shared/graph.service';
+import type { GraphNode } from '../types/graph';
+import { logError } from '../utils/errorHandling';
 
 interface ExploreProps {
-  onSelectNode: (node: ThoughtNode) => void;
+  onSelectNode: (node: GraphNode) => void;
+  onPreloadedData?: (nodes: Map<string, GraphNode>, relationships: any[]) => void;
 }
 
-export default function Explore({ onSelectNode }: ExploreProps) {
-  const [displayedNodes, setDisplayedNodes] = useState<ThoughtNode[]>([]);
+export default function Explore({ onSelectNode, onPreloadedData }: ExploreProps) {
+  const [displayedNodes, setDisplayedNodes] = useState<GraphNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentSkip, setCurrentSkip] = useState(0);
   const [total, setTotal] = useState(0);
@@ -29,8 +32,25 @@ export default function Explore({ onSelectNode }: ExploreProps) {
       setDisplayedNodes(response.nodes);
       setTotal(response.total);
       setCurrentSkip(skip);
+
+      // Preload children for all displayed nodes
+      const elementIds = response.nodes.map(node => node.elementId);
+      if (elementIds.length > 0) {
+        try {
+          const preloadedData = await getBatchNodesWithChildren(elementIds);
+          if (onPreloadedData) {
+            const nodesMap = new Map<string, GraphNode>();
+            preloadedData.nodes.forEach(node => {
+              nodesMap.set(node.elementId, node);
+            });
+            onPreloadedData(nodesMap, preloadedData.relationships);
+          }
+        } catch (error) {
+          logError(error, 'Failed to preload node children');
+        }
+      }
     } catch (error) {
-      console.error('Failed to load nodes:', error);
+      logError(error, 'Failed to load nodes');
     } finally {
       setLoading(false);
     }

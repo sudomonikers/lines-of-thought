@@ -1,18 +1,5 @@
 import { fetchAPI } from './api.config';
-
-export interface ThoughtNode {
-  elementId: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface ThoughtRelationship {
-  elementId: string;
-  fromElementId: string;
-  toElementId: string;
-  type: 'BRANCHES_TO';
-  perspective?: string | null;
-}
+import type { GraphNode, GraphRelationship } from '../types/graph';
 
 export interface CreateNodePayload {
   text: string;
@@ -27,12 +14,12 @@ export interface CreateRelationshipPayload {
 }
 
 export interface GraphResponse {
-  nodes: ThoughtNode[];
-  relationships: ThoughtRelationship[];
+  nodes: GraphNode[];
+  relationships: GraphRelationship[];
 }
 
 export interface PaginatedNodesResponse {
-  nodes: ThoughtNode[];
+  nodes: GraphNode[];
   total: number;
   limit: number;
   skip: number;
@@ -40,8 +27,8 @@ export interface PaginatedNodesResponse {
 }
 
 // Create a new thought node
-export async function createNode(payload: CreateNodePayload): Promise<ThoughtNode> {
-  return fetchAPI<ThoughtNode>('/nodes', {
+export async function createNode(payload: CreateNodePayload): Promise<GraphNode> {
+  return fetchAPI<GraphNode>('/nodes', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -50,8 +37,8 @@ export async function createNode(payload: CreateNodePayload): Promise<ThoughtNod
 // Create a relationship between two nodes
 export async function createRelationship(
   payload: CreateRelationshipPayload
-): Promise<ThoughtRelationship> {
-  return fetchAPI<ThoughtRelationship>('/relationships', {
+): Promise<GraphRelationship> {
+  return fetchAPI<GraphRelationship>('/relationships', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -62,9 +49,17 @@ export async function getNodeWithChildren(elementId: string): Promise<GraphRespo
   return fetchAPI<GraphResponse>(`/nodes/${encodeURIComponent(elementId)}/graph`);
 }
 
+// Get multiple nodes with their children (batch operation)
+export async function getBatchNodesWithChildren(elementIds: string[]): Promise<GraphResponse> {
+  return fetchAPI<GraphResponse>('/nodes/batch/graph', {
+    method: 'POST',
+    body: JSON.stringify({ elementIds }),
+  });
+}
+
 // Search nodes by text
-export async function searchNodes(query: string): Promise<ThoughtNode[]> {
-  return fetchAPI<ThoughtNode[]>(`/nodes/search?q=${encodeURIComponent(query)}`);
+export async function searchNodes(query: string): Promise<GraphNode[]> {
+  return fetchAPI<GraphNode[]>(`/nodes/search?q=${encodeURIComponent(query)}`);
 }
 
 // Get all nodes with pagination

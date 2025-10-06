@@ -238,21 +238,43 @@
   position: relative;
 }
 
-.thought-view {
+.thought-slider-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.thought-slider {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transform: translateX(0);
+}
+
+.thought-slider.transitioning {
+  transition: transform 0.4s ease-out;
+}
+
+.thought-slider.slide-right.transitioning {
+  transform: translateX(-100%);
+}
+
+.thought-slider.slide-left {
+  transform: translateX(-100%);
+}
+
+.thought-slider.slide-left.transitioning {
+  transform: translateX(0);
+}
+
+.thought-slide {
+  flex: 0 0 100%;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s ease-out;
-}
-
-.thought-view.slide-right {
-  transform: translateX(100%);
-}
-
-.thought-view.slide-left {
-  transform: translateX(-100%);
 }
 
 .thought-card-wrapper {
@@ -736,8 +758,8 @@
     flex-shrink: 0;
   }
 
-  /* Constrain thought view */
-  .thought-view {
+  /* Constrain thought slider */
+  .thought-slide {
     padding: 0;
     align-items: stretch;
     justify-content: flex-start;

@@ -10,6 +10,7 @@ import {
 } from './handlers/relationships';
 import {
   getNodeWithChildren,
+  getBatchNodesWithChildren,
 } from './handlers/graph';
 
 const router = Router();
@@ -27,5 +28,6 @@ router.post('/relationships', createRelationship);
 
 // Graph query routes
 router.get('/nodes/:elementId/graph', getNodeWithChildren);
+router.post('/nodes/batch/graph', getBatchNodesWithChildren);
 
 export default router;

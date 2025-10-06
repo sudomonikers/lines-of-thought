@@ -2,20 +2,23 @@ import { useState } from 'react';
 import './App.css';
 import ThoughtTree from './components/ThoughtTree';
 import SearchBar from './components/SearchBar';
-import LivingWorldCanvas from './components/LivingWorldCanvas';
+import LivingWorldCanvas from './components/canvas/LivingWorldCanvas';
 import HelpModal from './components/HelpModal';
 import Explore from './components/Explore';
 import CreateThoughtModal from './components/CreateThoughtModal';
-import { type GraphNode } from './types/graph';
-import { type ThoughtNode, createNode } from './shared/graph.service';
+import { type GraphNode, type GraphRelationship } from './types/graph';
+import { createNode } from './shared/graph.service';
+import { handleError } from './utils/errorHandling';
 
 function App() {
   const [viewingNode, setViewingNode] = useState<GraphNode | null>(null);
   const [showNewThoughtModal, setShowNewThoughtModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [preloadedNodes, setPreloadedNodes] = useState<Map<string, GraphNode>>(new Map());
+  const [preloadedRelationships, setPreloadedRelationships] = useState<GraphRelationship[]>([]);
 
-  const handleSelectNode = (node: GraphNode | ThoughtNode) => {
-    setViewingNode(node as GraphNode);
+  const handleSelectNode = (node: GraphNode) => {
+    setViewingNode(node);
   };
 
   const handleBackToExplore = () => {
@@ -44,9 +47,13 @@ function App() {
 
       setShowNewThoughtModal(false);
     } catch (error) {
-      console.error('Failed to create thought:', error);
-      alert('Failed to create thought. Please try again.');
+      handleError(error, 'Failed to create thought. Please try again.');
     }
+  };
+
+  const handlePreloadedData = (nodes: Map<string, GraphNode>, relationships: GraphRelationship[]) => {
+    setPreloadedNodes(nodes);
+    setPreloadedRelationships(relationships);
   };
 
   return (
@@ -61,9 +68,14 @@ function App() {
         <ThoughtTree
           navigationTarget={viewingNode}
           onBackToExplore={handleBackToExplore}
+          preloadedNodes={preloadedNodes}
+          preloadedRelationships={preloadedRelationships}
         />
       ) : (
-        <Explore onSelectNode={handleSelectNode} />
+        <Explore
+          onSelectNode={handleSelectNode}
+          onPreloadedData={handlePreloadedData}
+        />
       )}
       <CreateThoughtModal
         isOpen={showNewThoughtModal}
