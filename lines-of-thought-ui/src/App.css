@@ -713,6 +713,38 @@
   box-shadow: 0 4px 12px rgba(139, 157, 195, 0.4);
 }
 
+/* Explore slider styles */
+.explore-slider-container {
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.explore-slider {
+  display: flex;
+  width: 100%;
+  height: auto;
+  transform: translateX(0);
+}
+
+.explore-slider.transitioning {
+  transition: transform 0.4s ease-out;
+}
+
+.explore-slider.slide-right.transitioning {
+  transform: translateX(-100%);
+}
+
+.explore-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Search input row - keep horizontal on all screen sizes */
 .search-input-row {
   display: flex;

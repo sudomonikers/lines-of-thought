@@ -54,7 +54,7 @@ resource "aws_lambda_function" "api" {
   role          = aws_iam_role.lambda_role.arn
   package_type  = "Image"
   timeout       = 30
-  memory_size   = 1024  # Increased for transformers library
+  memory_size   = 1024 # Increased for transformers library
 
   # Image URI from ECR (built by null_resource)
   image_uri = "${aws_ecr_repository.lambda_api.repository_url}:latest"
@@ -223,7 +223,7 @@ resource "aws_lambda_permission" "api_gateway" {
   function_name = aws_lambda_function.api.function_name
   principal     = "apigateway.amazonaws.com"
   # Manually construct ARN because execution_arn sometimes omits account ID
-  source_arn    = "arn:aws:execute-api:${local.region}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/*"
+  source_arn = "arn:aws:execute-api:${local.region}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/*"
 }
 
 # Output the API Gateway URL
