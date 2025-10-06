@@ -59,7 +59,10 @@ resource "aws_iam_role_policy" "lambda_bedrock_policy" {
           "bedrock:InvokeModel",
           "bedrock:InvokeModelWithResponseStream"
         ]
-        Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0"
+        Resource = [
+          "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0",
+          "arn:aws:bedrock:*:*:inference-profile/*"
+        ]
       }
     ]
   })

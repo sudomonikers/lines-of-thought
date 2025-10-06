@@ -13,7 +13,7 @@ echo "Building TypeScript..."
 npm run build
 
 echo "Building Docker image for x86_64/amd64..."
-docker build --platform linux/amd64 -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
+docker build --platform linux/amd64 --provenance=false -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
 
 # Login to ECR
 echo "Logging in to ECR..."
