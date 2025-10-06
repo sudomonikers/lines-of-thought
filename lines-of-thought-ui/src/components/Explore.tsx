@@ -8,29 +8,27 @@ interface ExploreProps {
 export default function Explore({ onSelectNode }: ExploreProps) {
   const [displayedNodes, setDisplayedNodes] = useState<ThoughtNode[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentSkip, setCurrentSkip] = useState(0);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    loadRandomNodes();
+    loadNodes(0);
   }, []);
 
-  const loadRandomNodes = async () => {
+  const loadNodes = async (skip: number) => {
     setLoading(true);
     try {
-      // Get total count first
-      const response = await getAllNodes(1, 0);
+      const response = await getAllNodes(9, skip);
 
       if (response.total === 0) {
         setDisplayedNodes([]);
+        setTotal(0);
         return;
       }
 
-      // Generate random skip offset (ensure we can get 9 nodes)
-      const maxSkip = Math.max(0, response.total - 9);
-      const randomSkip = Math.floor(Math.random() * (maxSkip + 1));
-
-      // Fetch 9 random nodes
-      const randomResponse = await getAllNodes(9, randomSkip);
-      setDisplayedNodes(randomResponse.nodes);
+      setDisplayedNodes(response.nodes);
+      setTotal(response.total);
+      setCurrentSkip(skip);
     } catch (error) {
       console.error('Failed to load nodes:', error);
     } finally {
@@ -39,7 +37,10 @@ export default function Explore({ onSelectNode }: ExploreProps) {
   };
 
   const handleNext = () => {
-    loadRandomNodes();
+    // Calculate next skip, wrapping around to 0 if we've reached the end
+    const nextSkip = currentSkip + 9;
+    const adjustedSkip = nextSkip >= total ? 0 : nextSkip;
+    loadNodes(adjustedSkip);
   };
 
   if (loading) {
