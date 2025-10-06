@@ -105,18 +105,24 @@ export default function SearchBar({ onSelectNode, onNewThought, onHelp }: Search
 
       {showResults && results.length > 0 && (
         <div className="search-results">
-          {results.map((node) => (
-            <div
-              key={node.elementId}
-              className="search-result-item"
-              onClick={() => handleSelectNode(node)}
-            >
-              <div className="search-result-text">{node.text}</div>
-              <div className="search-result-date">
-                {new Date(node.createdAt).toLocaleDateString()}
+          {results.map((node) => {
+            const displayText = node.text.length > 100
+              ? node.text.slice(0, 100) + '...'
+              : node.text;
+
+            return (
+              <div
+                key={node.elementId}
+                className="search-result-item"
+                onClick={() => handleSelectNode(node)}
+              >
+                <div className="search-result-text">{displayText}</div>
+                <div className="search-result-date">
+                  {new Date(node.createdAt).toLocaleDateString()}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
