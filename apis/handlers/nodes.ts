@@ -21,22 +21,70 @@ export const createNode = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Perspective must be a string of 500 characters or less' });
     }
 
-    // Content moderation using Claude 3.5 Haiku
-    const moderation = await moderateContent(text);
-    if (!moderation.isValid) {
-      return res.status(400).json({
-        error: 'Content rejected by moderation',
-        reason: moderation.reason || 'This text does not appear to be a meaningful philosophical thought',
-      });
-    }
-
-    // Generate embedding for the text
+    // Generate embedding for the text first (before moderation)
     const embedding = await generateEmbedding(text);
 
     const driver = getNeo4jDriver();
     const session = driver.session();
 
     try {
+      // Check for originality BEFORE moderation to avoid unnecessary Bedrock calls
+      if (!parentId) {
+        // Check for duplicate parent nodes
+        const similarityResult = await session.run(
+          `MATCH (p:Thought:Parent)
+           WHERE p.embedding IS NOT NULL
+           WITH p, gds.similarity.cosine(p.embedding, $embedding) AS similarity
+           WHERE similarity > 0.9
+           RETURN p, similarity
+           ORDER BY similarity DESC
+           LIMIT 1`,
+          { embedding }
+        );
+
+        if (similarityResult.records.length > 0) {
+          const similarity = similarityResult.records[0].get('similarity');
+          return res.status(400).json({
+            error: 'This thought already exists',
+            errorCode: 'DUPLICATE_THOUGHT',
+            message: `A very similar thought already exists (${(similarity * 100).toFixed(1)}% similarity). Please try a different perspective or build upon the existing thought.`,
+            similarity: similarity,
+          });
+        }
+      } else {
+        // Check for duplicate child thoughts under the same parent
+        const siblingsSimilarityResult = await session.run(
+          `MATCH (parent:Thought)-[:BRANCHES_TO]->(sibling:Thought)
+           WHERE elementId(parent) = $parentId AND sibling.embedding IS NOT NULL
+           WITH sibling, gds.similarity.cosine(sibling.embedding, $embedding) AS similarity
+           WHERE similarity > 0.9
+           RETURN sibling, similarity
+           ORDER BY similarity DESC
+           LIMIT 1`,
+          { parentId, embedding }
+        );
+
+        if (siblingsSimilarityResult.records.length > 0) {
+          const similarity = siblingsSimilarityResult.records[0].get('similarity');
+          return res.status(400).json({
+            error: 'This branch already exists',
+            errorCode: 'DUPLICATE_THOUGHT',
+            message: `A very similar branch already exists under this thought (${(similarity * 100).toFixed(1)}% similarity). Please try a different perspective.`,
+            similarity: similarity,
+          });
+        }
+      }
+
+      // Content moderation using Claude 3.5 Haiku (only after similarity check passes)
+      const moderation = await moderateContent(text);
+      if (!moderation.isValid) {
+        return res.status(400).json({
+          error: 'Content rejected by moderation',
+          errorCode: 'MODERATION_FAILED',
+          reason: moderation.reason || 'This text does not appear to be a meaningful philosophical thought',
+        });
+      }
+
       // Add Parent label if isParent is true
       const labels = isParent ? ':Thought:Parent' : ':Thought';
 

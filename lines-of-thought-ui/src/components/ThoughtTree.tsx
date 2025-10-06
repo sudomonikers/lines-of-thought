@@ -260,7 +260,7 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
     } catch (error) {
       clearInterval(messageInterval);
 
-      // Extract error message
+      // Extract error message and handle different error codes
       let errorMessage = 'Failed to create branch. Please try again.';
 
       if (error instanceof Error) {
@@ -273,11 +273,19 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
           // Try to parse JSON error response
           try {
             const errorData = JSON.parse(errorBody);
-            if (statusCode === '400' && errorData.error) {
-              // Content moderation or validation error
-              errorMessage = errorData.reason
-                ? `Content rejected: ${errorData.reason}`
-                : errorData.error;
+
+            if (errorData.errorCode === 'DUPLICATE_THOUGHT') {
+              // Handle duplicate thought error with specific messaging
+              const similarity = errorData.similarity
+                ? ` (${(errorData.similarity * 100).toFixed(1)}% similar)`
+                : '';
+              errorMessage = `This thought already exists${similarity}. Please try a different perspective or build upon the existing thought.`;
+            } else if (errorData.errorCode === 'MODERATION_FAILED') {
+              // Handle moderation failure
+              errorMessage = errorData.reason || 'Content rejected by moderation. Please ensure your thought is meaningful and philosophical.';
+            } else if (statusCode === '400' && errorData.error) {
+              // Other validation errors
+              errorMessage = errorData.reason || errorData.message || errorData.error;
             } else {
               errorMessage = errorData.error || errorData.message || errorMessage;
             }

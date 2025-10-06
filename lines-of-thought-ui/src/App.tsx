@@ -47,7 +47,31 @@ function App() {
 
       setShowNewThoughtModal(false);
     } catch (error) {
-      handleError(error, 'Failed to create thought. Please try again.');
+      // Parse API error to check for specific error codes
+      let errorMessage = 'Failed to create thought. Please try again.';
+
+      if (error instanceof Error) {
+        const apiErrorMatch = error.message.match(/API Error: (\d+) - (.+)/);
+        if (apiErrorMatch) {
+          try {
+            const errorData = JSON.parse(apiErrorMatch[2]);
+
+            if (errorData.errorCode === 'DUPLICATE_THOUGHT') {
+              errorMessage = errorData.message || 'A very similar thought already exists. Please try a different perspective.';
+            } else if (errorData.errorCode === 'MODERATION_FAILED') {
+              errorMessage = errorData.reason || 'Content rejected by moderation.';
+            } else {
+              errorMessage = errorData.error || errorData.message || errorMessage;
+            }
+          } catch {
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      handleError(error, errorMessage);
     }
   };
 
