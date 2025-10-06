@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { getNeo4jDriver } from '../lib/neo4j';
+import { handleError, handleNotFound } from '../lib/error-handler';
 
 interface ThoughtNode {
   elementId: string;
@@ -41,7 +42,7 @@ export const getNodeWithChildren = async (req: Request, res: Response) => {
 
     const record = result.records[0];
     if (!record) {
-      return res.status(404).json({ error: 'Node not found' });
+      return handleNotFound(res, 'Node');
     }
 
     const node = record.get('n');
@@ -104,65 +105,6 @@ export const getNodeWithChildren = async (req: Request, res: Response) => {
 
     res.json({ nodes, relationships });
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-// Get the full graph starting from a node (all descendants)
-export const getFullGraph = async (req: Request, res: Response) => {
-  try {
-    const { elementId } = req.params;
-
-    const driver = getNeo4jDriver();
-    const session = driver.session();
-
-    // Get the entire subgraph starting from this node
-    const result = await session.run(
-      `MATCH path = (start:Thought)-[:BRANCHES_TO*0..]->(descendant:Thought)
-       WHERE elementId(start) = $elementId
-       WITH collect(DISTINCT start) + collect(DISTINCT descendant) as allNodes,
-            relationships(path) as rels
-       UNWIND allNodes as n
-       WITH collect(DISTINCT n) as nodes, collect(DISTINCT rels) as allRels
-       UNWIND allRels as relList
-       UNWIND relList as r
-       RETURN nodes,
-              collect(DISTINCT {rel: r, from: elementId(startNode(r)), to: elementId(endNode(r))}) as relationships`,
-      { elementId }
-    );
-
-    await session.close();
-
-    const record = result.records[0];
-    if (!record) {
-      return res.status(404).json({ error: 'Node not found' });
-    }
-
-    const nodeList = record.get('nodes') || [];
-    const relationshipData = record.get('relationships') || [];
-
-    const nodes: ThoughtNode[] = nodeList.map((node: any) => ({
-      elementId: node.elementId,
-      text: node.properties.text,
-      createdAt: node.properties.createdAt.toString(),
-    }));
-
-    const relationships: ThoughtRelationship[] = relationshipData
-      .filter((r: any) => r.rel && r.rel.elementId)
-      .map((r: any) => ({
-        elementId: r.rel.elementId,
-        fromElementId: r.from,
-        toElementId: r.to,
-        type: r.rel.type,
-        perspective: r.rel.properties?.perspective || null,
-      }));
-
-    res.json({ nodes, relationships });
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleError(res, error, 'getNodeWithChildren');
   }
 };

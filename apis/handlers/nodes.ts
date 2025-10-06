@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getNeo4jDriver } from '../lib/neo4j';
 import { generateEmbedding } from '../lib/embeddings';
+import { handleError, handleNotFound } from '../lib/error-handler';
 
 // Create a new thought node
 export const createNode = async (req: Request, res: Response) => {
@@ -9,6 +10,10 @@ export const createNode = async (req: Request, res: Response) => {
 
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text is required' });
+    }
+
+    if (text.length > 5000) {
+      return res.status(400).json({ error: 'Text must not exceed 5000 characters' });
     }
 
     // Generate embedding for the text
@@ -38,147 +43,7 @@ export const createNode = async (req: Request, res: Response) => {
       createdAt: node.properties.createdAt.toString(),
     });
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-// Get a node by elementId
-export const getNode = async (req: Request, res: Response) => {
-  try {
-    const { elementId } = req.params;
-
-    const driver = getNeo4jDriver();
-    const session = driver.session();
-
-    const result = await session.run(
-      `MATCH (n:Thought)
-       WHERE elementId(n) = $elementId
-       RETURN n`,
-      { elementId }
-    );
-
-    await session.close();
-
-    const node = result.records[0]?.get('n');
-    if (!node) {
-      return res.status(404).json({ error: 'Node not found' });
-    }
-
-    res.json({
-      elementId: node.elementId,
-      text: node.properties.text,
-      createdAt: node.properties.createdAt.toString(),
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-// Update a node by elementId
-export const updateNode = async (req: Request, res: Response) => {
-  try {
-    const { elementId } = req.params;
-    const { text } = req.body;
-
-    if (!text || typeof text !== 'string') {
-      return res.status(400).json({ error: 'Text is required' });
-    }
-
-    const driver = getNeo4jDriver();
-    const session = driver.session();
-
-    const result = await session.run(
-      `MATCH (n:Thought)
-       WHERE elementId(n) = $elementId
-       SET n.text = $text
-       RETURN n`,
-      { elementId, text }
-    );
-
-    await session.close();
-
-    const node = result.records[0]?.get('n');
-    if (!node) {
-      return res.status(404).json({ error: 'Node not found' });
-    }
-
-    res.json({
-      elementId: node.elementId,
-      text: node.properties.text,
-      createdAt: node.properties.createdAt.toString(),
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-// Delete a node by elementId
-export const deleteNode = async (req: Request, res: Response) => {
-  try {
-    const { elementId } = req.params;
-
-    const driver = getNeo4jDriver();
-    const session = driver.session();
-
-    // Delete the node and all its relationships
-    const result = await session.run(
-      `MATCH (n:Thought)
-       WHERE elementId(n) = $elementId
-       DETACH DELETE n
-       RETURN count(n) as deleted`,
-      { elementId }
-    );
-
-    await session.close();
-
-    const deleted = result.records[0]?.get('deleted').toNumber();
-    if (deleted === 0) {
-      return res.status(404).json({ error: 'Node not found' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-// Get all root nodes (nodes with no incoming relationships)
-export const getRootNodes = async (_req: Request, res: Response) => {
-  try {
-    const driver = getNeo4jDriver();
-    const session = driver.session();
-
-    const result = await session.run(
-      `MATCH (n:Thought)
-       WHERE NOT ()-[:BRANCHES_TO]->(n)
-       RETURN n
-       ORDER BY n.createdAt DESC`
-    );
-
-    await session.close();
-
-    const nodes = result.records.map(record => {
-      const node = record.get('n');
-      return {
-        elementId: node.elementId,
-        text: node.properties.text,
-        createdAt: node.properties.createdAt.toString(),
-      };
-    });
-
-    res.json(nodes);
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleError(res, error, 'createNode');
   }
 };
 
@@ -233,9 +98,7 @@ export const searchNodes = async (req: Request, res: Response) => {
 
     res.json(nodes);
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleError(res, error, 'searchNodes');
   }
 };
 
@@ -288,8 +151,6 @@ export const getAllNodes = async (req: Request, res: Response) => {
       hasMore: skip + nodes.length < total,
     });
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleError(res, error, 'getAllNodes');
   }
 };

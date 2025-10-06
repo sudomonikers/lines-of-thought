@@ -681,8 +681,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 2rem;
+  padding-top: 6rem;
   gap: 2rem;
   overflow-y: auto;
 }
@@ -708,6 +709,7 @@
   border-radius: 8px;
   padding: 2rem;
   min-height: 200px;
+  max-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -715,6 +717,7 @@
   transition: all 0.25s;
   backdrop-filter: blur(10px);
   image-rendering: pixelated;
+  overflow: hidden;
 }
 
 .explore-card:hover {
@@ -730,6 +733,9 @@
   text-align: center;
   color: #d8e8f8;
   font-family: 'Courier New', monospace;
+  overflow-y: auto;
+  max-height: 100%;
+  width: 100%;
 }
 
 .explore-next-btn {

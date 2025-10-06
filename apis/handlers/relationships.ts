@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { getNeo4jDriver } from '../lib/neo4j';
+import { handleError, handleNotFound } from '../lib/error-handler';
 
 // Create a relationship between two nodes
 export const createRelationship = async (req: Request, res: Response) => {
@@ -14,6 +15,10 @@ export const createRelationship = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid relationship type' });
     }
 
+    if (perspective && (typeof perspective !== 'string' || perspective.length > 500)) {
+      return res.status(400).json({ error: 'Perspective must be a string of 500 characters or less' });
+    }
+
     const driver = getNeo4jDriver();
     const session = driver.session();
 
@@ -21,7 +26,8 @@ export const createRelationship = async (req: Request, res: Response) => {
     const result = await session.run(
       `MATCH (from:Thought), (to:Thought)
        WHERE elementId(from) = $fromElementId AND elementId(to) = $toElementId
-       CREATE (from)-[r:BRANCHES_TO ${perspective ? '{perspective: $perspective}' : ''}]->(to)
+       CREATE (from)-[r:BRANCHES_TO]->(to)
+       SET r.perspective = $perspective
        RETURN r, elementId(from) as fromElementId, elementId(to) as toElementId`,
       { fromElementId, toElementId, perspective: perspective || null }
     );
@@ -30,7 +36,7 @@ export const createRelationship = async (req: Request, res: Response) => {
 
     const record = result.records[0];
     if (!record) {
-      return res.status(404).json({ error: 'One or both nodes not found' });
+      return handleNotFound(res, 'One or both nodes');
     }
 
     const relationship = record.get('r');
@@ -43,75 +49,6 @@ export const createRelationship = async (req: Request, res: Response) => {
       perspective: relationship.properties.perspective || null,
     });
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-// Get all outgoing relationships for a node
-export const getNodeRelationships = async (req: Request, res: Response) => {
-  try {
-    const { elementId } = req.params;
-
-    const driver = getNeo4jDriver();
-    const session = driver.session();
-
-    const result = await session.run(
-      `MATCH (from:Thought)-[r:BRANCHES_TO]->(to:Thought)
-       WHERE elementId(from) = $elementId
-       RETURN r, elementId(from) as fromElementId, elementId(to) as toElementId`,
-      { elementId }
-    );
-
-    await session.close();
-
-    const relationships = result.records.map(record => {
-      const relationship = record.get('r');
-      return {
-        elementId: relationship.elementId,
-        fromElementId: record.get('fromElementId'),
-        toElementId: record.get('toElementId'),
-        type: relationship.type,
-        perspective: relationship.properties.perspective || null,
-      };
-    });
-
-    res.json(relationships);
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-// Delete a relationship by elementId
-export const deleteRelationship = async (req: Request, res: Response) => {
-  try {
-    const { elementId } = req.params;
-
-    const driver = getNeo4jDriver();
-    const session = driver.session();
-
-    const result = await session.run(
-      `MATCH ()-[r:BRANCHES_TO]->()
-       WHERE elementId(r) = $elementId
-       DELETE r
-       RETURN count(r) as deleted`,
-      { elementId }
-    );
-
-    await session.close();
-
-    const deleted = result.records[0]?.get('deleted').toNumber();
-    if (deleted === 0) {
-      return res.status(404).json({ error: 'Relationship not found' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleError(res, error, 'createRelationship');
   }
 };

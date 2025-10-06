@@ -1,9 +1,10 @@
 // @ts-ignore - @xenova/transformers doesn't have type definitions
 import { pipeline, env } from '@xenova/transformers';
 
-// Configure transformers to use local cache
+// Configure transformers to download models at runtime
 env.allowLocalModels = false;
 env.useBrowserCache = false;
+env.cacheDir = '/tmp/transformers_cache'; // Use Lambda's /tmp directory for caching
 
 // Cache the model pipeline to avoid reloading it on every request
 let embeddingPipeline: any = null;
@@ -13,10 +14,8 @@ let embeddingPipeline: any = null;
  */
 async function getEmbeddingPipeline() {
   if (!embeddingPipeline) {
-    console.log('Initializing embedding pipeline...');
     // Use embeddings pipeline instead of feature-extraction
     embeddingPipeline = await pipeline('embeddings', 'sentence-transformers/all-MiniLM-L6-v2');
-    console.log('Embedding pipeline initialized');
   }
   return embeddingPipeline;
 }
@@ -28,16 +27,13 @@ async function getEmbeddingPipeline() {
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
-    console.log('Generating embedding for text:', text.substring(0, 50));
     const extractor = await getEmbeddingPipeline();
 
     // Generate embeddings - embeddings pipeline might not need pooling/normalize options
     const output = await extractor(text);
 
     // Convert tensor to array
-    console.log('Output type:', typeof output, 'Keys:', Object.keys(output));
     const embedding = Array.from(output['data'] || output) as number[];
-    console.log('Embedding generated, length:', embedding.length);
 
     return embedding;
   } catch (error) {

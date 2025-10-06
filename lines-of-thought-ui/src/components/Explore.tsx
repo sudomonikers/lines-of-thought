@@ -8,7 +8,6 @@ interface ExploreProps {
 export default function Explore({ onSelectNode }: ExploreProps) {
   const [displayedNodes, setDisplayedNodes] = useState<ThoughtNode[]>([]);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     loadRandomNodes();
@@ -19,7 +18,6 @@ export default function Explore({ onSelectNode }: ExploreProps) {
     try {
       // Get total count first
       const response = await getAllNodes(1, 0);
-      setTotal(response.total);
 
       if (response.total === 0) {
         setDisplayedNodes([]);

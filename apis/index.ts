@@ -1,8 +1,18 @@
 import express from 'express';
 import serverless from 'serverless-http';
+import helmet from 'helmet';
 import routes from './routes';
 
 const app = express();
+
+// Security headers with helmet
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for API
+  crossOriginEmbedderPolicy: false,
+}));
+
+// JSON body size limit (500KB max)
+app.use(express.json({ limit: '500kb' }));
 
 // CORS middleware - use environment variable for allowed origins
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
@@ -31,8 +41,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
-app.use(express.json());
 
 // Routes
 app.use(routes);

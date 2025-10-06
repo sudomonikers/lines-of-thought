@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "deploy": "npm run build && aws s3 sync dist/ s3://lines-of-thought-bucket --delete && aws cloudfront create-invalidation --distribution-id $(aws cloudfront list-distributions --query \"DistributionList.Items[?Aliases.Items[?contains(@, 'lines-of-thought.com')]].Id\" --output text) --paths '/*'",
+    "deploy": "npm run build && aws s3 sync dist/ s3://lines-of-thought-bucket --delete && aws cloudfront create-invalidation --distribution-id $(aws cloudfront list-distributions --query \"DistributionList.Items[?Aliases.Items[?contains(@, 'lines-of-thought.com')]] | [0].Id\" --output text) --paths '/*'",
     "lint": "eslint .",
     "preview": "vite preview"
   },

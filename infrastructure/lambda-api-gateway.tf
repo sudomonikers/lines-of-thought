@@ -46,18 +46,23 @@ resource "aws_iam_role_policy" "lambda_policy" {
   })
 }
 
-# Lambda Function
+# Lambda Function (Container Image)
 resource "aws_lambda_function" "api" {
+  depends_on = [null_resource.docker_build_push]
+
   function_name = local.lambda_name
   role          = aws_iam_role.lambda_role.arn
-  handler       = "index.handler"
-  runtime       = "nodejs22.x"
+  package_type  = "Image"
   timeout       = 30
-  memory_size   = 512
+  memory_size   = 1024  # Increased for transformers library
 
-  # Placeholder for deployment - you'll need to deploy your code separately
-  filename         = "lambda_placeholder.zip"
-  source_code_hash = filebase64sha256("lambda_placeholder.zip")
+  # Image URI from ECR (built by null_resource)
+  image_uri = "${aws_ecr_repository.lambda_api.repository_url}:latest"
+
+  # Set CMD to handler - entrypoint is inherited from base image
+  image_config {
+    command = ["index.handler"]
+  }
 
   environment {
     variables = {
@@ -73,8 +78,7 @@ resource "aws_lambda_function" "api" {
 
   lifecycle {
     ignore_changes = [
-      filename,
-      source_code_hash
+      image_uri
     ]
   }
 }
@@ -193,6 +197,23 @@ resource "aws_api_gateway_stage" "api" {
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   name              = "/aws/apigateway/${local.api_name}"
   retention_in_days = 14
+}
+
+# Method-level throttling for expensive operations
+resource "aws_api_gateway_method_settings" "expensive_operations" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_stage.api.stage_name
+  method_path = "*/*"
+
+  settings {
+    # More restrictive throttling for all methods
+    throttling_burst_limit = 200
+    throttling_rate_limit  = 100
+
+    # Enable detailed CloudWatch metrics
+    metrics_enabled = true
+    logging_level   = "INFO"
+  }
 }
 
 # Lambda Permission for API Gateway to invoke the function
