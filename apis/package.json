@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.901.0",
     "@xenova/transformers": "^1.4.3",
     "express": "^5.1.0",
     "helmet": "^8.1.0",

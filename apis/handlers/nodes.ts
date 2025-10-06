@@ -2,11 +2,12 @@ import { Request, Response } from 'express';
 import { getNeo4jDriver } from '../lib/neo4j';
 import { generateEmbedding } from '../lib/embeddings';
 import { handleError, handleNotFound } from '../lib/error-handler';
+import { moderateContent } from '../lib/moderation';
 
 // Create a new thought node
 export const createNode = async (req: Request, res: Response) => {
   try {
-    const { text, isParent } = req.body;
+    const { text, isParent, parentId, perspective } = req.body;
 
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text is required' });
@@ -16,32 +17,85 @@ export const createNode = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Text must not exceed 5000 characters' });
     }
 
+    if (perspective && (typeof perspective !== 'string' || perspective.length > 500)) {
+      return res.status(400).json({ error: 'Perspective must be a string of 500 characters or less' });
+    }
+
+    // Content moderation using Claude 3.5 Haiku
+    const moderation = await moderateContent(text);
+    if (!moderation.isValid) {
+      return res.status(400).json({
+        error: 'Content rejected by moderation',
+        reason: moderation.reason || 'This text does not appear to be a meaningful philosophical thought',
+      });
+    }
+
     // Generate embedding for the text
     const embedding = await generateEmbedding(text);
 
     const driver = getNeo4jDriver();
     const session = driver.session();
 
-    // Add Parent label if isParent is true
-    const labels = isParent ? ':Thought:Parent' : ':Thought';
-    const result = await session.run(
-      `CREATE (n${labels} {text: $text, embedding: $embedding, createdAt: datetime()})
-       RETURN n`,
-      { text, embedding }
-    );
+    try {
+      // Add Parent label if isParent is true
+      const labels = isParent ? ':Thought:Parent' : ':Thought';
 
-    const node = result.records[0]?.get('n');
-    await session.close();
+      let query: string;
+      let params: any;
 
-    if (!node) {
-      return res.status(500).json({ error: 'Failed to create node' });
+      if (parentId) {
+        // Create node and relationship in one transaction
+        query = `
+          MATCH (parent:Thought)
+          WHERE elementId(parent) = $parentId
+          CREATE (n${labels} {text: $text, embedding: $embedding, createdAt: datetime()})
+          CREATE (parent)-[r:BRANCHES_TO]->(n)
+          SET r.perspective = $perspective
+          RETURN n, r, elementId(parent) as parentElementId
+        `;
+        params = { text, embedding, parentId, perspective: perspective || null };
+      } else {
+        // Create node only
+        query = `
+          CREATE (n${labels} {text: $text, embedding: $embedding, createdAt: datetime()})
+          RETURN n
+        `;
+        params = { text, embedding };
+      }
+
+      const result = await session.run(query, params);
+      const record = result.records[0];
+
+      if (!record) {
+        if (parentId) {
+          return res.status(404).json({ error: 'Parent node not found' });
+        }
+        return res.status(500).json({ error: 'Failed to create node' });
+      }
+
+      const node = record.get('n');
+      const responseData: any = {
+        elementId: node.elementId,
+        text: node.properties.text,
+        createdAt: node.properties.createdAt.toString(),
+      };
+
+      // If relationship was created, include relationship info
+      if (parentId && record.get('r')) {
+        const relationship = record.get('r');
+        responseData.relationship = {
+          elementId: relationship.elementId,
+          fromElementId: record.get('parentElementId'),
+          toElementId: node.elementId,
+          type: relationship.type,
+          perspective: relationship.properties.perspective || null,
+        };
+      }
+
+      res.status(201).json(responseData);
+    } finally {
+      await session.close();
     }
-
-    res.status(201).json({
-      elementId: node.elementId,
-      text: node.properties.text,
-      createdAt: node.properties.createdAt.toString(),
-    });
   } catch (error) {
     handleError(res, error, 'createNode');
   }

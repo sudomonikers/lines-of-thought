@@ -4,6 +4,8 @@ import type { GraphNode, GraphRelationship } from '../types/graph';
 export interface CreateNodePayload {
   text: string;
   isParent?: boolean;
+  parentId?: string;
+  perspective?: string;
 }
 
 export interface CreateRelationshipPayload {
@@ -11,6 +13,10 @@ export interface CreateRelationshipPayload {
   toElementId: string;
   type: 'BRANCHES_TO';
   perspective?: string | null;
+}
+
+export interface CreateNodeResponse extends GraphNode {
+  relationship?: GraphRelationship;
 }
 
 export interface GraphResponse {
@@ -27,8 +33,8 @@ export interface PaginatedNodesResponse {
 }
 
 // Create a new thought node
-export async function createNode(payload: CreateNodePayload): Promise<GraphNode> {
-  return fetchAPI<GraphNode>('/nodes', {
+export async function createNode(payload: CreateNodePayload): Promise<CreateNodeResponse> {
+  return fetchAPI<CreateNodeResponse>('/nodes', {
     method: 'POST',
     body: JSON.stringify(payload),
   });

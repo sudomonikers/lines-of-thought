@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import ThoughtCard from './ThoughtNode';
 import CreateThoughtModal from './CreateThoughtModal';
 import { getChildNodes, getParentNode, getChildRelationships, type GraphData, type GraphNode, type GraphRelationship } from '../types/graph';
-import { createNode, createRelationship, getNodeWithChildren, getBatchNodesWithChildren, type GraphResponse } from '../shared/graph.service';
+import { createNode, createRelationship, getNodeWithChildren, getBatchNodesWithChildren, type GraphResponse, type CreateNodeResponse } from '../shared/graph.service';
 import { logError, handleError } from '../utils/errorHandling';
 
 interface ThoughtTreeProps {
@@ -195,32 +195,33 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
 
     setIsLoading(true);
     try {
-      // Create the new node
-      const newNode = await createNode({ text });
-
-      // Create relationship from current node to new node with optional perspective
-      const relationship = await createRelationship({
-        fromElementId: currentNode.elementId,
-        toElementId: newNode.elementId,
-        type: 'BRANCHES_TO',
-        perspective: perspective || null
+      // Create the new node and relationship in one API call
+      const response = await createNode({
+        text,
+        parentId: currentNode.elementId,
+        perspective: perspective || undefined
       });
 
       // Update local graph state
       const updatedNodes = new Map(graph.nodes);
-      updatedNodes.set(newNode.elementId, {
-        elementId: newNode.elementId,
-        text: newNode.text,
-        createdAt: newNode.createdAt
+      updatedNodes.set(response.elementId, {
+        elementId: response.elementId,
+        text: response.text,
+        createdAt: response.createdAt
       });
 
-      const updatedRelationships = [...graph.relationships, {
-        elementId: relationship.elementId,
-        fromElementId: relationship.fromElementId,
-        toElementId: relationship.toElementId,
-        type: relationship.type,
-        perspective: relationship.perspective
-      }];
+      let updatedRelationships = graph.relationships;
+
+      // Add the relationship if it was created
+      if (response.relationship) {
+        updatedRelationships = [...graph.relationships, {
+          elementId: response.relationship.elementId,
+          fromElementId: response.relationship.fromElementId,
+          toElementId: response.relationship.toElementId,
+          type: response.relationship.type,
+          perspective: response.relationship.perspective
+        }];
+      }
 
       setGraph({
         nodes: updatedNodes,
@@ -228,7 +229,7 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
       });
 
       // Navigate to the new branch using CSS transition
-      setNextNodeId(newNode.elementId);
+      setNextNodeId(response.elementId);
       setTimeout(() => {
         setSlideDirection('right');
       }, 10);
