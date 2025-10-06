@@ -24,7 +24,7 @@ export default function ThoughtCard({
   return (
     <div className="thought-card-container">
       {onBack && (
-        <button className="back-button" onClick={onBack}>
+        <button className="back-button border-primary mono-font btn-base transition-standard" onClick={onBack}>
           ← Back
         </button>
       )}
@@ -33,21 +33,21 @@ export default function ThoughtCard({
         {parentNode && onParentClick && (
           <div className="parent-thought">
             <div
-              className="parent-thought-card"
+              className="parent-thought-card border-secondary"
               onClick={onParentClick}
             >
-              <div className="parent-thought-label">← Preceding thought</div>
-              <div className="parent-thought-text">{parentNode.text}</div>
+              <div className="parent-thought-label mono-font">← Preceding thought</div>
+              <div className="parent-thought-text mono-font">{parentNode.text}</div>
             </div>
           </div>
         )}
 
-        <div className="thought-card">
-          <div className="thought-card-content">
+        <div className="thought-card bg-card backdrop-blur pixelated">
+          <div className="thought-card-content color-primary mono-font">
             {node.text}
           </div>
 
-          <button className="add-branch-btn" onClick={onAddBranch}>
+          <button className="add-branch-btn btn-base" onClick={onAddBranch}>
             + Add Branch
           </button>
         </div>
@@ -64,8 +64,8 @@ export default function ThoughtCard({
                   className="branch-line"
                   onClick={() => onBranchClick(index)}
                 >
-                  <div className="branch-line-path"></div>
-                  <div className="branch-line-label">
+                  <div className="branch-line-path transition-standard pixelated"></div>
+                  <div className="branch-line-label color-primary mono-font transition-standard">
                     {perspective ? (
                       <>
                         <span className="branch-perspective">{perspective}</span>

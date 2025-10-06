@@ -10,11 +10,11 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content help-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Lines of Thought</h2>
+          <h2 className="color-secondary mono-font">Lines of Thought</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
-        <div className="modal-body help-modal-body">
+        <div className="modal-body help-modal-body mono-font">
           <section>
             <h3>What is this?</h3>
             <p>
@@ -50,7 +50,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         </div>
 
         <div className="modal-footer">
-          <button onClick={onClose} className="btn-primary">
+          <button onClick={onClose} className="btn-primary btn-base">
             Got it!
           </button>
         </div>

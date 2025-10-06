@@ -46,7 +46,7 @@ export default function Explore({ onSelectNode }: ExploreProps) {
   if (loading) {
     return (
       <div className="explore-container">
-        <div className="explore-loading">Loading thoughts...</div>
+        <div className="explore-loading color-secondary mono-font">Loading thoughts...</div>
       </div>
     );
   }
@@ -57,15 +57,15 @@ export default function Explore({ onSelectNode }: ExploreProps) {
         {displayedNodes.map((node) => (
           <div
             key={node.elementId}
-            className="explore-card"
+            className="explore-card border-primary bg-card backdrop-blur pixelated transition-standard"
             onClick={() => onSelectNode(node)}
           >
-            <div className="explore-card-text">{node.text}</div>
+            <div className="explore-card-text color-primary mono-font">{node.text}</div>
           </div>
         ))}
       </div>
       {displayedNodes.length > 0 && (
-        <button className="explore-next-btn" onClick={handleNext}>
+        <button className="explore-next-btn btn-base" onClick={handleNext}>
           Next →
         </button>
       )}

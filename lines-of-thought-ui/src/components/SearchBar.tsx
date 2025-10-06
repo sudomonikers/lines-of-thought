@@ -91,13 +91,13 @@ export default function SearchBar({ onSelectNode, onNewThought, onHelp }: Search
           onFocus={() => query && setShowResults(true)}
           onBlur={handleBlur}
           placeholder="Search thoughts..."
-          className="search-input"
+          className="search-input border-primary bg-input color-primary focus-ring mono-font pixelated"
         />
-        <button onClick={onHelp} className="help-button">
+        <button onClick={onHelp} className="help-button border-primary color-primary mono-font pixelated btn-base">
           ?
         </button>
       </div>
-      <button onClick={onNewThought} className="new-thought-button">
+      <button onClick={onNewThought} className="new-thought-button btn-base">
         + New Thought
       </button>
 
@@ -116,8 +116,8 @@ export default function SearchBar({ onSelectNode, onNewThought, onHelp }: Search
                 className="search-result-item"
                 onClick={() => handleSelectNode(node)}
               >
-                <div className="search-result-text">{displayText}</div>
-                <div className="search-result-date">
+                <div className="search-result-text color-primary mono-font">{displayText}</div>
+                <div className="search-result-date mono-font">
                   {new Date(node.createdAt).toLocaleDateString()}
                 </div>
               </div>

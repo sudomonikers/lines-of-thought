@@ -59,14 +59,14 @@ export default function CreateThoughtModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{parentText ? 'Add Branch' : 'New Thought'}</h2>
+          <h2 className="color-secondary mono-font">{parentText ? 'Add Branch' : 'New Thought'}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         {parentText && (
           <div className="modal-parent-context">
-            <span className="context-label">Branching from:</span>
-            <p className="context-text">{parentText}</p>
+            <span className="context-label mono-font">Branching from:</span>
+            <p className="context-text color-primary mono-font">{parentText}</p>
           </div>
         )}
 
@@ -78,18 +78,18 @@ export default function CreateThoughtModal({
             placeholder="What are you thinking about?"
             autoFocus
             rows={6}
-            className="thought-textarea"
+            className="thought-textarea border-primary bg-input color-primary mono-font focus-ring"
           />
 
           {parentText && (
             <div className="perspective-section">
-              <label className="perspective-label">Perspective (optional)</label>
+              <label className="perspective-label color-secondary mono-font">Perspective (optional)</label>
               <input
                 type="text"
                 value={perspective}
                 onChange={(e) => setPerspective(e.target.value)}
                 placeholder="From what viewpoint?"
-                className="perspective-input"
+                className="perspective-input border-primary bg-input color-primary mono-font focus-ring"
                 list="perspective-suggestions"
               />
               <datalist id="perspective-suggestions">
@@ -102,7 +102,7 @@ export default function CreateThoughtModal({
                   <button
                     key={suggestion}
                     type="button"
-                    className="perspective-chip"
+                    className="perspective-chip border-secondary mono-font"
                     onClick={() => setPerspective(suggestion)}
                   >
                     {suggestion}
@@ -114,10 +114,10 @@ export default function CreateThoughtModal({
         </div>
 
         <div className="modal-footer">
-          <button onClick={onClose} className="btn-secondary">
+          <button onClick={onClose} className="btn-secondary btn-base">
             Cancel
           </button>
-          <button onClick={handleSubmit} className="btn-primary" disabled={!text.trim()}>
+          <button onClick={handleSubmit} className="btn-primary btn-base" disabled={!text.trim()}>
             {parentText ? 'Add Branch' : 'Create'}
           </button>
         </div>
