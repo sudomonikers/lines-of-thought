@@ -244,7 +244,9 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
           fromElementId: response.relationship.fromElementId,
           toElementId: response.relationship.toElementId,
           type: response.relationship.type,
-          perspective: response.relationship.perspective
+          perspective: response.relationship.perspective,
+          strengthScore: response.relationship.strengthScore,
+          strengthAnalysis: response.relationship.strengthAnalysis
         }];
       }
 

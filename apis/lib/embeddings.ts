@@ -1,10 +1,10 @@
 // @ts-ignore - @xenova/transformers doesn't have type definitions
 import { pipeline, env } from '@xenova/transformers';
 
-// Configure transformers to download models at runtime
-env.allowLocalModels = false;
+// Configure transformers to use the pre-downloaded model
+env.allowLocalModels = true;
 env.useBrowserCache = false;
-env.cacheDir = '/tmp/transformers_cache'; // Use Lambda's /tmp directory for caching
+env.cacheDir = '/opt/models'; // Use /opt/models where we bundled the model in the Docker image
 
 // Cache the model pipeline to avoid reloading it on every request
 let embeddingPipeline: any = null;
