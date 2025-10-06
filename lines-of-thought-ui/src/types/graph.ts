@@ -10,6 +10,8 @@ export interface GraphRelationship {
   toElementId: string;
   type: 'BRANCHES_TO';
   perspective?: string | null;
+  strengthScore?: number | null;
+  strengthAnalysis?: string | null;
 }
 
 export interface GraphData {

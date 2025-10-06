@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getNeo4jDriver } from '../lib/neo4j';
 import { handleError, handleNotFound } from '../lib/error-handler';
+import { analyzeArgumentStrength } from '../lib/moderation';
 
 // Create a relationship between two nodes
 export const createRelationship = async (req: Request, res: Response) => {
@@ -22,14 +23,41 @@ export const createRelationship = async (req: Request, res: Response) => {
     const driver = getNeo4jDriver();
     const session = driver.session();
 
-    // Create relationship with optional perspective property
+    // First, fetch both nodes to get their text for strength analysis
+    const nodesResult = await session.run(
+      `MATCH (from:Thought), (to:Thought)
+       WHERE elementId(from) = $fromElementId AND elementId(to) = $toElementId
+       RETURN from.text as fromText, to.text as toText`,
+      { fromElementId, toElementId }
+    );
+
+    if (nodesResult.records.length === 0) {
+      await session.close();
+      return handleNotFound(res, 'One or both nodes');
+    }
+
+    const fromText = nodesResult.records[0].get('fromText');
+    const toText = nodesResult.records[0].get('toText');
+
+    // Analyze argument strength between parent and child
+    const strengthResult = await analyzeArgumentStrength(fromText, toText);
+
+    // Create relationship with optional perspective property and strength score
     const result = await session.run(
       `MATCH (from:Thought), (to:Thought)
        WHERE elementId(from) = $fromElementId AND elementId(to) = $toElementId
        CREATE (from)-[r:BRANCHES_TO]->(to)
-       SET r.perspective = $perspective
+       SET r.perspective = $perspective,
+           r.strengthScore = $strengthScore,
+           r.strengthAnalysis = $strengthAnalysis
        RETURN r, elementId(from) as fromElementId, elementId(to) as toElementId`,
-      { fromElementId, toElementId, perspective: perspective || null }
+      {
+        fromElementId,
+        toElementId,
+        perspective: perspective || null,
+        strengthScore: strengthResult.score,
+        strengthAnalysis: strengthResult.analysis || null,
+      }
     );
 
     await session.close();
@@ -47,6 +75,8 @@ export const createRelationship = async (req: Request, res: Response) => {
       toElementId: record.get('toElementId'),
       type: relationship.type,
       perspective: relationship.properties.perspective || null,
+      strengthScore: relationship.properties.strengthScore || null,
+      strengthAnalysis: relationship.properties.strengthAnalysis || null,
     });
   } catch (error) {
     handleError(res, error, 'createRelationship');

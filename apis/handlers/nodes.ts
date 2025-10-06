@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { getNeo4jDriver } from '../lib/neo4j';
 import { generateEmbedding } from '../lib/embeddings';
 import { handleError, handleNotFound } from '../lib/error-handler';
-import { moderateContent } from '../lib/moderation';
+import { moderateContent, analyzeArgumentStrength } from '../lib/moderation';
 
 // Create a new thought node
 export const createNode = async (req: Request, res: Response) => {
@@ -42,18 +42,48 @@ export const createNode = async (req: Request, res: Response) => {
 
       let query: string;
       let params: any;
+      let strengthScore: number | null = null;
+      let strengthAnalysis: string | null = null;
 
       if (parentId) {
+        // First, fetch the parent node to get its text for strength analysis
+        const parentResult = await session.run(
+          `MATCH (parent:Thought)
+           WHERE elementId(parent) = $parentId
+           RETURN parent.text as parentText`,
+          { parentId }
+        );
+
+        if (parentResult.records.length === 0) {
+          return res.status(404).json({ error: 'Parent node not found' });
+        }
+
+        const parentText = parentResult.records[0].get('parentText');
+
+        // Analyze argument strength between parent and child
+        const strengthResult = await analyzeArgumentStrength(parentText, text);
+        strengthScore = strengthResult.score;
+        strengthAnalysis = strengthResult.analysis || null;
+
         // Create node and relationship in one transaction
         query = `
           MATCH (parent:Thought)
           WHERE elementId(parent) = $parentId
           CREATE (n${labels} {text: $text, embedding: $embedding, createdAt: datetime()})
           CREATE (parent)-[r:BRANCHES_TO]->(n)
-          SET r.perspective = $perspective
+          SET r.perspective = $perspective,
+              r.strengthScore = $strengthScore,
+              r.strengthAnalysis = $strengthAnalysis
           RETURN n, r, elementId(parent) as parentElementId
         `;
-        params = { text, embedding, parentId, perspective: perspective || null };
+        params = {
+          text,
+          embedding,
+          parentId,
+          perspective: perspective || null,
+          strengthScore,
+          strengthAnalysis,
+        };
       } else {
         // Create node only
         query = `
@@ -89,6 +119,8 @@ export const createNode = async (req: Request, res: Response) => {
           toElementId: node.elementId,
           type: relationship.type,
           perspective: relationship.properties.perspective || null,
+          strengthScore: relationship.properties.strengthScore || null,
+          strengthAnalysis: relationship.properties.strengthAnalysis || null,
         };
       }
 

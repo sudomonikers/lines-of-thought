@@ -19,6 +19,8 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const thoughtViewRef = useRef<HTMLDivElement>(null);
 
   // Load the initial node from the API or use preloaded data
@@ -194,6 +196,25 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
     if (!currentNode) return;
 
     setIsLoading(true);
+    setLoadingError(null);
+
+    // Rotate through loading messages
+    const messages = [
+      'Creating thought...',
+      'Moderating content...',
+      'Checking for fallacies...',
+      'Analyzing strength...',
+      'Checking for originality...'
+    ];
+
+    let messageIndex = 0;
+    setLoadingMessage(messages[0]);
+
+    const messageInterval = setInterval(() => {
+      messageIndex = (messageIndex + 1) % messages.length;
+      setLoadingMessage(messages[messageIndex]);
+    }, 1500);
+
     try {
       // Create the new node and relationship in one API call
       const response = await createNode({
@@ -201,6 +222,8 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
         parentId: currentNode.elementId,
         perspective: perspective || undefined
       });
+
+      clearInterval(messageInterval);
 
       // Update local graph state
       const updatedNodes = new Map(graph.nodes);
@@ -230,14 +253,52 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
 
       // Navigate to the new branch using CSS transition
       setNextNodeId(response.elementId);
+      setIsLoading(false);
       setTimeout(() => {
         setSlideDirection('right');
       }, 10);
     } catch (error) {
-      handleError(error, 'Failed to create branch. Please try again.');
-    } finally {
-      setIsLoading(false);
+      clearInterval(messageInterval);
+
+      // Extract error message
+      let errorMessage = 'Failed to create branch. Please try again.';
+
+      if (error instanceof Error) {
+        // Parse API error format
+        const apiErrorMatch = error.message.match(/API Error: (\d+) - (.+)/);
+        if (apiErrorMatch) {
+          const statusCode = apiErrorMatch[1];
+          const errorBody = apiErrorMatch[2];
+
+          // Try to parse JSON error response
+          try {
+            const errorData = JSON.parse(errorBody);
+            if (statusCode === '400' && errorData.error) {
+              // Content moderation or validation error
+              errorMessage = errorData.reason
+                ? `Content rejected: ${errorData.reason}`
+                : errorData.error;
+            } else {
+              errorMessage = errorData.error || errorData.message || errorMessage;
+            }
+          } catch {
+            // If not JSON, use the raw error text
+            errorMessage = errorBody || errorMessage;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      setLoadingError(errorMessage);
+      logError(error, 'Failed to create branch');
+      // Keep isLoading true to show the error overlay
     }
+  };
+
+  const closeLoadingOverlay = () => {
+    setIsLoading(false);
+    setLoadingError(null);
   };
 
   if (!currentNode) {
@@ -303,7 +364,26 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
 
       {isLoading && (
         <div className="loading-overlay">
-          <div className="loading-spinner">Creating thought...</div>
+          <div className="loading-spinner">
+            {loadingError ? (
+              <>
+                <button className="loading-close" onClick={closeLoadingOverlay}>×</button>
+                <div className="loading-error">
+                  <div className="error-title mono-font">Error</div>
+                  <div className="error-message mono-font">{loadingError}</div>
+                </div>
+              </>
+            ) : (
+              <div className="loading-message mono-font">
+                {loadingMessage.replace('...', '')}
+                <span className="loading-dots">
+                  <span className="dot">.</span>
+                  <span className="dot">.</span>
+                  <span className="dot">.</span>
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

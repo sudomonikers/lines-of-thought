@@ -14,6 +14,8 @@ interface ThoughtRelationship {
   toElementId: string;
   type: string;
   perspective?: string | null;
+  strengthScore?: number | null;
+  strengthAnalysis?: string | null;
 }
 
 // Get multiple nodes with their immediate children (batch operation)
@@ -95,6 +97,8 @@ export const getBatchNodesWithChildren = async (req: Request, res: Response) => 
             toElementId: r.to,
             type: r.rel.type,
             perspective: r.rel.properties?.perspective || null,
+            strengthScore: r.rel.properties?.strengthScore || null,
+            strengthAnalysis: r.rel.properties?.strengthAnalysis || null,
           });
         });
 
@@ -108,6 +112,8 @@ export const getBatchNodesWithChildren = async (req: Request, res: Response) => 
             toElementId: r.to,
             type: r.rel.type,
             perspective: r.rel.properties?.perspective || null,
+            strengthScore: r.rel.properties?.strengthScore || null,
+            strengthAnalysis: r.rel.properties?.strengthAnalysis || null,
           });
         });
     });
@@ -196,6 +202,8 @@ export const getNodeWithChildren = async (req: Request, res: Response) => {
           toElementId: r.to,
           type: r.rel.type,
           perspective: r.rel.properties?.perspective || null,
+          strengthScore: r.rel.properties?.strengthScore || null,
+          strengthAnalysis: r.rel.properties?.strengthAnalysis || null,
         })),
       ...parentRelationshipData
         .filter((r: any) => r.rel && r.rel.elementId)
@@ -205,6 +213,8 @@ export const getNodeWithChildren = async (req: Request, res: Response) => {
           toElementId: r.to,
           type: r.rel.type,
           perspective: r.rel.properties?.perspective || null,
+          strengthScore: r.rel.properties?.strengthScore || null,
+          strengthAnalysis: r.rel.properties?.strengthAnalysis || null,
         }))
     ];
 
