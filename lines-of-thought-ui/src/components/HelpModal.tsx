@@ -28,14 +28,41 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </section>
 
           <section>
+            <h3>Perspectives</h3>
+            <p>
+              When creating a branch, you can optionally specify a <strong>perspective</strong> (e.g., "The Ruler",
+              "The Peasant", "Long-term", "Short-term") to examine the parent thought from a specific viewpoint.
+              This helps you explore how different stakeholders or timeframes might view the same idea.
+            </p>
+          </section>
+
+          <section>
+            <h3>Argument Strength Scores</h3>
+            <p>
+              When you create a branch, AI analyzes how logically it follows from the parent thought.
+              Scores range from -100 (weak/fallacious) to 100 (strong/sound). This helps you identify
+              which branches represent the most rigorous reasoning paths.
+            </p>
+          </section>
+
+          <section>
             <h3>How it works</h3>
             <ul>
               <li><strong>Thoughts</strong> - Each card represents a single thought or idea</li>
               <li><strong>Branches</strong> - Create multiple lines of reasoning from any thought by clicking "+ Add Branch"</li>
               <li><strong>Preceding thoughts</strong> - See what thought led to the current one on the left</li>
               <li><strong>Navigation</strong> - Click on preceding thoughts or branches to navigate through your thinking</li>
-              <li><strong>Search</strong> - Find any thought you've created using the search bar</li>
+              <li><strong>Search</strong> - Find any thought using semantic similarity or keyword matching</li>
             </ul>
+          </section>
+
+          <section>
+            <h3>Content Moderation</h3>
+            <p>
+              All thoughts are moderated by AI to ensure they are meaningful philosophical contributions.
+              Thoughts must be substantive, avoid logical fallacies, and contribute to productive reasoning.
+              Duplicate thoughts are automatically detected to maintain the originality of your exploration.
+            </p>
           </section>
         </div>
 

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import ThoughtCard from './ThoughtNode';
 import CreateThoughtModal from './CreateThoughtModal';
 import { getChildNodes, getParentNode, getChildRelationships, type GraphData, type GraphNode, type GraphRelationship } from '../types/graph';
-import { createNode, createRelationship, getNodeWithChildren, getBatchNodesWithChildren, type GraphResponse, type CreateNodeResponse } from '../shared/graph.service';
-import { logError, handleError } from '../utils/errorHandling';
+import { createNode, getNodeWithChildren, getBatchNodesWithChildren, type GraphResponse } from '../shared/graph.service';
+import { logError } from '../utils/errorHandling';
 
 interface ThoughtTreeProps {
   navigationTarget?: GraphNode | null;
@@ -80,7 +80,7 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
         setSlideDirection(null);
 
         // Force a reflow to ensure the transition: none takes effect
-        element.offsetHeight;
+        void element.offsetHeight;
 
         // Re-enable transitions
         element.style.transition = '';
@@ -276,10 +276,10 @@ export default function ThoughtTree({ navigationTarget, onBackToExplore, preload
 
             if (errorData.errorCode === 'DUPLICATE_THOUGHT') {
               // Handle duplicate thought error with specific messaging
-              const similarity = errorData.similarity
+              const similarityText = errorData.similarity
                 ? ` (${(errorData.similarity * 100).toFixed(1)}% similar)`
                 : '';
-              errorMessage = `This thought already exists${similarity}. Please try a different perspective or build upon the existing thought.`;
+              errorMessage = `This thought already exists${similarityText}. Please try a different perspective or build upon the existing thought.`;
             } else if (errorData.errorCode === 'MODERATION_FAILED') {
               // Handle moderation failure
               errorMessage = errorData.reason || 'Content rejected by moderation. Please ensure your thought is meaningful and philosophical.';
